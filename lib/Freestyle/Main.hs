@@ -12,43 +12,76 @@ import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import Prettyprinter.Render.Terminal
 
+data Main = Main
+  { colorWheel :: [Color]
+  , offset :: Double
+  , switch :: Bool
+  , waterfall :: [[Color]]
+  }
+  deriving Eq
+
+initMain :: Main
+initMain = Main
+  { colorWheel = [Red, Green, Yellow, Blue]
+  , offset = 0
+  , switch = False
+  , waterfall =
+    [ rotate i r
+    | (i, r) <- zip [1..] $ replicate 8 $ stimes 4
+      [Blue, Green, Blue, Blue, Yellow, Red, Green, Blue]
+    ]
+  }
+
+mainCfg :: TVar Main -> FreestyleCfg Main Style
+mainCfg s = FreestyleCfg
+  { initState = s
+  , layoutDoc = layoutPretty defaultLayoutOptions
+  , renderDoc = renderDisplay
+  , drawState = mainDraw
+  }
+
+mainDraw :: Main -> STM (Doc Style)
+mainDraw (Main cs rads en wf) =
+  return $ vsep
+    [ hcat $ zipWith renderColorChar (cycle cs) "~~~~~~~~~~ Freestyle!"
+    , renderSin rads
+    , pretty $ if en then "ON" else "OFF"
+    , renderWaterfall wf
+    ]
+
 freestyleMain :: IO ()
 freestyleMain = join $ atomically $ do
+  s <- newTVar initMain
   f <- newFreestyle
-  s <- newTVar ( [Red, Green, Yellow, Blue]
-               , 0
-               , False
-               , [ rotate i r
-                 | (i, r) <- zip [1..] $ replicate 8 $ stimes 4 [Blue, Green, Blue, Blue, Yellow, Red, Green, Blue]]
-               )
-  initFreestyle f $ FreestyleCfg
-    { initState = s
-    , layoutDoc = layoutPretty defaultLayoutOptions
-    , renderDoc = renderDisplay
-    , drawState = \(cs, rads, en, wf) -> return $
-        vsep
-          [ hcat $ zipWith renderColorChar (cycle cs) "~~~~~~~~~~ Freestyle!"
-          , renderSin rads
-          , pretty $ if en then "ON" else "OFF"
-          , renderWaterfall wf
-          ]
-    }
+  initFreestyle f $ mainCfg s
   return $ mapConcurrently_ id
     [ runFreestyle f
-    , forever $ do
-        atomically $ modifyTVar' s $ \(cs, offset, en, wf) ->
-          (drop 1 cs <> take 1 cs, offset + 0.1, en, wf)
-        threadDelay 100000
-    , forever $ do
-      ch <- getChar
-      when (ch == 'a') $
-        atomically $ modifyTVar' s $ \(cs, offset, en, wf) ->
-          (cs, offset, not en, wf)
-    , forever $ do
-        atomically $ modifyTVar' s $ \(cs, offset, en, wf) ->
-          (cs, offset, en, cycleWaterfall wf)
-        threadDelay 100000
+    , runWheel s
+    , runKeyReader s
+    , runWaterfall s
     ]
+
+runWheel :: TVar Main -> IO a
+runWheel s = forever $ do
+  atomically $ modifyTVar' s updateWheel
+  threadDelay 100000
+  where
+    updateWheel m@(Main cs o _ _) = m{colorWheel=cs', offset=o'}
+      where
+        cs' = drop 1 cs <> take 1 cs
+        o'  = o + 0.1
+
+runKeyReader :: TVar Main -> IO a
+runKeyReader s = forever $ do
+  ch <- getChar
+  when (ch == 'a') $
+    atomically $ modifyTVar' s $ \m -> m{switch=not $ switch m}
+
+runWaterfall :: TVar Main -> IO a
+runWaterfall s = forever $ do
+  atomically $ modifyTVar' s $ \m ->
+    m{waterfall=cycleWaterfall $ waterfall m}
+  threadDelay 100000
 
 rotate :: Int -> [a] -> [a]
 rotate _ [] = []

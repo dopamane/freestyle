@@ -41,7 +41,7 @@ displayDoc e d = do
 runDisplay :: Display ann -> IO a
 runDisplay e = withoutEcho $ do
   hSetBuffering stdin  NoBuffering
-  hSetBuffering stdout NoBuffering
+  hSetBuffering stdout LineBuffering
   withoutCursor $
     forever $ join $ atomically $ do
       s <- takeTMVar $ str e
@@ -53,8 +53,8 @@ runDisplay e = withoutEcho $ do
 withoutCursor :: IO a -> IO a
 withoutCursor =
   bracket_
-    (TIO.putStr $ T.pack "\x1b[?25l") -- hide cursor
-    (TIO.putStr $ T.pack "\x1b[?25h") -- show cursor
+    (TIO.putStrLn $ T.pack "\x1b[?25l") -- hide cursor
+    (TIO.putStrLn $ T.pack "\x1b[?25h") -- show cursor
 
 withoutEcho :: IO a -> IO a
 withoutEcho =

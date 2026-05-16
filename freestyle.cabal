@@ -14,34 +14,33 @@ extra-doc-files:    CHANGELOG.md
 
 library
     ghc-options:      -Wall -Wunused-packages -O2
+    hs-source-dirs:   lib
+    default-language: Haskell2010
     exposed-modules:  Freestyle,
                       Freestyle.Display,
-                      Freestyle.Freestyle
+                      Freestyle.Freestyle,
+                      Freestyle.Main
     build-depends:    async
                     , base < 5.0
-                    , bytestring
                     , prettyprinter
                     , prettyprinter-ansi-terminal
                     , stm
                     , text
-    hs-source-dirs:   lib
-    default-language: Haskell2010
 
 executable fs
     ghc-options:      -Wall -O2 -threaded
+    hs-source-dirs:   exe
+    default-language: Haskell2010
     main-is:          Main.hs
     build-depends:
         base,
         freestyle
 
-    hs-source-dirs:   exe
-    default-language: Haskell2010
-
 test-suite test
     ghc-options:      -Wall -O2 -threaded
+    hs-source-dirs:   test
     default-language: Haskell2010
     type:             exitcode-stdio-1.0
-    hs-source-dirs:   test
     main-is:          Main.hs
     build-depends:
         base,

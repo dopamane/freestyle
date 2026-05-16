@@ -1,6 +1,6 @@
 module Main where
 
-import Freestyle
+import Freestyle.Main
 
 main :: IO ()
 main = freestyleMain

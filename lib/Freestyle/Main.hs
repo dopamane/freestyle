@@ -27,7 +27,7 @@ initMain = Main
   , switch = False
   , waterfall =
     [ rotate i r
-    | (i, r) <- zip [1..] $ replicate 8 $ stimes 4
+    | (i, r) <- zip [1..] $ replicate 8 $ stimes (4 :: Int)
       [Blue, Green, Blue, Blue, Yellow, Red, Green, Blue]
     ]
   }
@@ -98,7 +98,7 @@ cycleWaterfall :: [[Color]] -> [[Color]]
 cycleWaterfall w = drop 1 w <> take 1 w
 
 renderSin :: Double -> Doc ann
-renderSin offset = vsep [renderRow r | r <- [-5..5]]
+renderSin o = vsep [renderRow r | r <- [-5..5]]
   where
     renderRow r = hcat [renderCell c | c <- [0..31]]
       where
@@ -106,7 +106,7 @@ renderSin offset = vsep [renderRow r | r <- [-5..5]]
           | floor (y * 5) == (r :: Integer) = pretty "*"
           | otherwise = pretty " "
           where
-            y = sin (c / 10 + offset)
+            y = sin (c / 10 + o)
 
 renderColorChar :: Color -> Char -> Doc Style
 renderColorChar clr ch = annotate (Ansi $ color clr) $ pretty ch

@@ -48,7 +48,7 @@ runDisplay e = withoutEcho $ do
       r <- readTMVar $ ren e
       -- clear the screen, set cursor back to top left
       -- then output text
-      return $ TIO.putStr $ T.pack "\x1b[2J\x1b[H" <> r s
+      return $ TIO.putStrLn $ T.pack "\x1b[2J\x1b[H" <> r s
 
 withoutCursor :: IO a -> IO a
 withoutCursor =

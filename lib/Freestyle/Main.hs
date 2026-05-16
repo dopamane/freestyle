@@ -38,7 +38,7 @@ freestyleMain = join $ atomically $ do
     , forever $ do
         atomically $ modifyTVar' s $ \(cs, offset, en, wf) ->
           (drop 1 cs <> take 1 cs, offset + 0.1, en, wf)
-        threadDelay 60000
+        threadDelay 100000
     , forever $ do
       ch <- getChar
       when (ch == 'a') $
@@ -47,7 +47,7 @@ freestyleMain = join $ atomically $ do
     , forever $ do
         atomically $ modifyTVar' s $ \(cs, offset, en, wf) ->
           (cs, offset, en, cycleWaterfall wf)
-        threadDelay 60000
+        threadDelay 100000
     ]
 
 rotate :: Int -> [a] -> [a]

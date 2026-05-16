@@ -10,6 +10,7 @@ import Freestyle.Freestyle
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import Prettyprinter.Render.Terminal
+import System.IO
 
 freestyleMain :: IO ()
 freestyleMain = join $ atomically $ do
@@ -17,35 +18,36 @@ freestyleMain = join $ atomically $ do
   s <- newTVar ([Red, Green, Yellow, Blue], 0, False)
   initFreestyle f $ FreestyleCfg
     { initState = s
+    , layoutDoc = layoutPretty defaultLayoutOptions
+    , renderDoc = renderDisplay
     , drawState = \(cs, rads, en) -> return $
         vsep
           [ hcat $ zipWith renderColorChar (cycle cs) "~~~~~~~~~~ Freestyle!"
           , renderSin rads
           , pretty $ if en then "ON" else "OFF"
           ]
-    , layoutDoc = layoutPretty defaultLayoutOptions
-    , renderDoc = renderDisplay
     }
-  return $ mapConcurrently_ id
-    [ runFreestyle f
-    , forever $ do
-        atomically $ modifyTVar' s $ \(cs, offset, en) ->
-          (drop 1 cs <> take 1 cs, offset + 0.1, en)
-        threadDelay 50000
-    , forever $ do
-        tout <- registerDelay 1000000
-        atomically $ do
-          check =<< readTVar tout
-          modifyTVar' s $ \(cs, offset, en) -> (cs, offset, not en)
-    ]
+  return $ do
+    hSetBuffering stdin NoBuffering
+    mapConcurrently_ id
+      [ runFreestyle f
+      , forever $ do
+          atomically $ modifyTVar' s $ \(cs, offset, en) ->
+            (drop 1 cs <> take 1 cs, offset + 0.1, en)
+          threadDelay 60000
+      , forever $ do
+        ch <- getChar
+        when (ch == 'a') $
+          atomically $ modifyTVar' s $ \(cs, offset, en) -> (cs, offset, not en)
+      ]
 
 renderSin :: Double -> Doc ann
-renderSin offset = vsep [renderRow r | r <- [0..9]]
+renderSin offset = vsep [renderRow r | r <- [-5..5]]
   where
     renderRow r = hcat [renderCell c | c <- [0..31]]
       where
         renderCell c
-          | floor (abs y * 10) == (r :: Integer) = pretty "*"
+          | floor (y * 5) == (r :: Integer) = pretty "*"
           | otherwise = pretty " "
           where
             y = sin (c / 10 + offset)

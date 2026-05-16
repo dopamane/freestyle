@@ -39,12 +39,28 @@ displayDoc e d = do
   writeTMVar (str e) $ l d
 
 runDisplay :: Display ann -> IO a
-runDisplay e = do
+runDisplay e = withoutEcho $ do
+  hSetBuffering stdin  NoBuffering
   hSetBuffering stdout NoBuffering
-  forever $ join $ atomically $ do
-    s <- takeTMVar $ str e
-    r <- readTMVar $ ren e
-    return $ TIO.putStr $ T.pack "\x1b[2J\x1b[H" <> r s
+  withoutCursor $
+    forever $ join $ atomically $ do
+      s <- takeTMVar $ str e
+      r <- readTMVar $ ren e
+      -- clear the screen, set cursor back to top left
+      -- then output text
+      return $ TIO.putStr $ T.pack "\x1b[2J\x1b[H" <> r s
+
+withoutCursor :: IO a -> IO a
+withoutCursor =
+  bracket_
+    (TIO.putStr $ T.pack "\x1b[?25l") -- hide cursor
+    (TIO.putStr $ T.pack "\x1b[?25h") -- show cursor
+
+withoutEcho :: IO a -> IO a
+withoutEcho =
+  bracket_
+    (hSetEcho stdin False)
+    (hSetEcho stdin True)
 
 data DisplayException
   = NoLayoutError

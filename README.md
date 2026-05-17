@@ -4,10 +4,12 @@ Concurrent, pretty TUI
 
 Example
 ```hs
+import Freestyle
+
 main :: IO ()
 main = do
   f <- newFreestyleIO
-  s <- newTVarIO $ \"FREESTYLE!!!FREESTYLE!!!FREESTYLE!!!\"
+  s <- newTVarIO "FREESTYLE!!!FREESTYLE!!!FREESTYLE!!!"
   concurrently_ (runFreestyle f $ cfg s) $
     forever $ do
       atomically $ modifyTVar' s rote
@@ -18,7 +20,7 @@ main = do
 cfg :: TVar String -> FreestyleCfg String AnsiStyle
 cfg s = FreestyleCfg
   { initState = readTVar s
-  , drawState = \\s' -> return $
+  , drawState = \s' -> return $
     applyWhen (take 1 s' == "E") (annotate $ color Blue) $ pretty s'
   , layoutDoc = layoutPretty defaultLayoutOptions
   , renderDoc = renderLazy

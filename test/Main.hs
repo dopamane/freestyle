@@ -12,7 +12,7 @@ import Prettyprinter.Render.Terminal
 main :: IO ()
 main = do
   f <- newFreestyleIO
-  s <- newTVarIO $ "FREESTYLE!!!FREESTYLE!!!FREESTYLE!!!"
+  s <- newTVarIO "FREESTYLE!!!FREESTYLE!!!FREESTYLE!!!"
   concurrently_ (runFreestyle f $ cfg s) $
     forever $ do
       atomically $ modifyTVar' s rote

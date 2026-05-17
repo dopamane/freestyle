@@ -1,6 +1,4 @@
 -- | Concurrent, pretty TUI
--- 
--- Example
 --
 -- @
 -- import Freestyle

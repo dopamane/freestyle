@@ -38,7 +38,8 @@ newFreestyle =
 newFreestyleIO :: IO (Freestyle s ann)
 newFreestyleIO = atomically newFreestyle
 
--- | User init configuration
+-- | User init configuration.
+-- The TUI updates when current state changes.
 data FreestyleCfg s ann = FreestyleCfg
   { readState :: STM s                                -- ^ read the current state
   , drawState :: s -> STM (Doc ann)                   -- ^ draw the current state
@@ -78,7 +79,7 @@ setLayout f = D.setLayout $ display f
 setRender :: Freestyle s ann -> (SimpleDocStream ann -> STM Text) -> STM ()
 setRender f = D.setRender $ display f
 
--- | Change the state accesor
+-- | Change the state reader
 setState :: Freestyle s ann -> STM s -> STM ()
 setState f = writeTMVar $ stateVar f
 

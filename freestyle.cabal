@@ -11,6 +11,7 @@ copyright:          (c) David Cox
 category:           Graphics
 build-type:         Simple
 extra-doc-files:    CHANGELOG.md
+                    README.md
 
 library
     ghc-options:      -Wall -Wunused-packages -O2
@@ -43,5 +44,9 @@ test-suite test
     type:             exitcode-stdio-1.0
     main-is:          Main.hs
     build-depends:
+        async,
         base,
-        freestyle
+        freestyle,
+        prettyprinter,
+        prettyprinter-ansi-terminal,
+        stm

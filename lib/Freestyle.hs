@@ -8,7 +8,8 @@
 -- main :: IO ()
 -- main = do
 --   s <- newTVarIO \"FREESTYLE!!!FREESTYLE!!!FREESTYLE!!!\"
---   concurrently_ (runFreestyle $ cfg s) $
+--   f <- newFreestyleIO
+--   concurrently_ (runFreestyle f $ cfg s) $
 --     forever $ do
 --       atomically $ modifyTVar' s rote
 --       threadDelay 200000
@@ -25,7 +26,10 @@
 --   }
 -- @
 module Freestyle
-  ( FreestyleCfg(..)
+  ( Freestyle
+  , newFreestyle
+  , newFreestyleIO
+  , FreestyleCfg(..)
   , runFreestyle
   , setLayout
   , setRender

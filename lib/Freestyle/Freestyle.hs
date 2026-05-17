@@ -1,6 +1,9 @@
 -- | Freestyle TUI
 module Freestyle.Freestyle
-  ( FreestyleCfg(..)
+  ( Freestyle
+  , newFreestyle
+  , newFreestyleIO
+  , FreestyleCfg(..)
   , runFreestyle
   , setLayout
   , setRender
@@ -31,6 +34,10 @@ newFreestyle =
     <*> newEmptyTMVar
     <*> newEmptyTMVar
 
+-- | Construct a new IO TUI
+newFreestyleIO :: IO (Freestyle s ann)
+newFreestyleIO = atomically newFreestyle
+
 -- | User init configuration
 data FreestyleCfg s ann = FreestyleCfg
   { readState :: STM s                          -- ^ read the current state
@@ -40,11 +47,10 @@ data FreestyleCfg s ann = FreestyleCfg
   }
 
 -- | Run the TUI with the configuration
-runFreestyle :: Eq s => FreestyleCfg s ann -> IO a
-runFreestyle cfg = join $ atomically $ do
-  f <- newFreestyle
-  initFreestyle f cfg
-  return $ either id id <$> race (runDisplay $ display f) (runState f)
+runFreestyle :: Eq s => Freestyle s ann -> FreestyleCfg s ann -> IO a
+runFreestyle f cfg = do
+  atomically $ initFreestyle f cfg
+  either id id <$> race (runDisplay $ display f) (runState f)
 
 -- | Initialize required configurations
 initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> STM ()

@@ -1,3 +1,4 @@
+-- | Display text on terminal
 module Freestyle.Display
   ( Display
   , newDisplay
@@ -5,6 +6,7 @@ module Freestyle.Display
   , setLayout
   , setRender
   , displayDoc
+  , DisplayException(..)
   ) where
 
 import Control.Concurrent.STM
@@ -16,28 +18,38 @@ import qualified Data.Text.Lazy.IO as TIO
 import Prettyprinter
 import System.IO
 
+-- | Display handle
 data Display ann = Display
   { str :: TMVar (SimpleDocStream ann)
   , lay :: TMVar (Doc ann -> SimpleDocStream ann)
   , ren :: TMVar (SimpleDocStream ann -> Text)
   }
 
+-- | Construct a new display handle
 newDisplay :: STM (Display ann)
 newDisplay =
   Display <$> newEmptyTMVar <*> newEmptyTMVar <*> newEmptyTMVar
 
+-- | Set the layout algorithm
 setLayout :: Display ann -> (Doc ann -> SimpleDocStream ann) -> STM ()
 setLayout e = writeTMVar $ lay e
 
+-- | Set the rendering algorithm
 setRender :: Display ann -> (SimpleDocStream ann -> Text) -> STM ()
 setRender e = writeTMVar $ ren e
 
+-- | Layout, render, then send to the display daemon.
+-- If a layout or rendering algorithm is not present
+-- throws 'DisplayException'.
 displayDoc :: Display ann -> Doc ann -> STM ()
 displayDoc e d = do
   l <- readTMVar (lay e) `orElse` throwSTM NoLayoutError
   _ <- readTMVar (ren e) `orElse` throwSTM NoRenderError
   writeTMVar (str e) $ l d
 
+-- | Setup the terminal buffering, echo, cursor.
+-- Then repeatedly read the doc stream, render text
+-- and output to terminal.
 runDisplay :: Display ann -> IO a
 runDisplay e = withoutEcho $ do
   hSetBuffering stdin  NoBuffering
@@ -62,9 +74,10 @@ withoutEcho =
     (hSetEcho stdin False)
     (hSetEcho stdin True)
 
+-- | Freestyle display exception
 data DisplayException
-  = NoLayoutError
-  | NoRenderError
+  = NoLayoutError -- ^ no layout, use 'setLayout'
+  | NoRenderError -- ^ no render, use 'setRender'
   deriving (Eq, Read)
 
 instance Show DisplayException where

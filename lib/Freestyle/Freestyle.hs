@@ -1,3 +1,4 @@
+-- | Freestyle TUI
 module Freestyle.Freestyle
   ( FreestyleCfg(..)
   , runFreestyle

@@ -1,3 +1,4 @@
+-- | Main executable @fs@
 module Freestyle.Main (freestyleMain) where
 
 import Control.Concurrent
@@ -12,6 +13,7 @@ import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import Prettyprinter.Render.Terminal
 
+-- | Main executable @fs@
 freestyleMain :: IO ()
 freestyleMain = join $ atomically $ do
   s <- newTVar initMain

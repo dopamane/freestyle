@@ -32,7 +32,7 @@ initMain = Main
     ]
   }
 
-mainCfg :: TVar Main -> FreestyleCfg Main Style
+mainCfg :: STM Main -> FreestyleCfg Main Style
 mainCfg s = FreestyleCfg
   { initState = s
   , layoutDoc = layoutPretty defaultLayoutOptions
@@ -53,7 +53,7 @@ freestyleMain :: IO ()
 freestyleMain = join $ atomically $ do
   s <- newTVar initMain
   f <- newFreestyle
-  initFreestyle f $ mainCfg s
+  initFreestyle f $ mainCfg $ readTVar s
   return $ mapConcurrently_ id
     [ runFreestyle f
     , runWheel s

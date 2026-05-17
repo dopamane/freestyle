@@ -15,7 +15,7 @@ import Prettyprinter
 
 data Freestyle s ann = Freestyle
   { display  :: Display ann
-  , stateVar :: TMVar (TVar s)             -- current state
+  , stateVar :: TMVar (STM s)              -- current state
   , drawVar  :: TMVar (s -> STM (Doc ann)) -- draw state
   }
 
@@ -32,15 +32,15 @@ runFreestyle f =
 
 runState :: Eq s => Freestyle s ann -> IO a
 runState f = forever $ join $ atomically $ do
-  s <- readTVar =<< readTMVar (stateVar f)
+  s <- join $ readTMVar (stateVar f)
   r <- readTMVar $ drawVar f
   displayDoc (display f) =<< r s
   return $ atomically $ do
-    s' <- readTVar =<< readTMVar (stateVar f)
+    s' <- join $ readTMVar (stateVar f)
     check $ s /= s'
 
 data FreestyleCfg s ann = FreestyleCfg
-  { initState :: TVar s
+  { initState :: STM s
   , drawState :: s -> STM (Doc ann)
   , layoutDoc :: Doc ann -> SimpleDocStream ann
   , renderDoc :: SimpleDocStream ann -> Text

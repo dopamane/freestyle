@@ -22,8 +22,8 @@ cfg s = FreestyleCfg
   { readState = readTVar s
   , drawState = \s' -> return $
     applyWhen (take 1 s' == "E") (annotate $ color Blue) $ pretty s'
-  , layoutDoc = layoutPretty defaultLayoutOptions
-  , renderDoc = renderLazy
+  , layoutDoc = return . layoutPretty defaultLayoutOptions
+  , renderDoc = return . renderLazy
   }
 ```
 

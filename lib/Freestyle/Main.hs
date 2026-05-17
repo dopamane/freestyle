@@ -48,8 +48,8 @@ initMain = Main
 mainCfg :: TVar Main -> FreestyleCfg Main Style
 mainCfg s = FreestyleCfg
   { readState = readTVar s
-  , layoutDoc = layoutPretty defaultLayoutOptions
-  , renderDoc = renderDisplay
+  , layoutDoc = return . layoutPretty defaultLayoutOptions
+  , renderDoc = return . renderDisplay
   , drawState = mainDraw
   }
 

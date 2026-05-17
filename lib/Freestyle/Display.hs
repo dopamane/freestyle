@@ -21,8 +21,8 @@ import System.IO
 -- | Display handle
 data Display ann = Display
   { str :: TMVar (SimpleDocStream ann)
-  , lay :: TMVar (Doc ann -> SimpleDocStream ann)
-  , ren :: TMVar (SimpleDocStream ann -> Text)
+  , lay :: TMVar (Doc ann -> STM (SimpleDocStream ann))
+  , ren :: TMVar (SimpleDocStream ann -> STM Text)
   }
 
 -- | Construct a new display handle
@@ -31,11 +31,11 @@ newDisplay =
   Display <$> newEmptyTMVar <*> newEmptyTMVar <*> newEmptyTMVar
 
 -- | Set the layout algorithm
-setLayout :: Display ann -> (Doc ann -> SimpleDocStream ann) -> STM ()
+setLayout :: Display ann -> (Doc ann -> STM (SimpleDocStream ann)) -> STM ()
 setLayout e = writeTMVar $ lay e
 
 -- | Set the rendering algorithm
-setRender :: Display ann -> (SimpleDocStream ann -> Text) -> STM ()
+setRender :: Display ann -> (SimpleDocStream ann -> STM Text) -> STM ()
 setRender e = writeTMVar $ ren e
 
 -- | Layout, render, then send to the display daemon.
@@ -45,7 +45,7 @@ displayDoc :: Display ann -> Doc ann -> STM ()
 displayDoc e d = do
   l <- readTMVar (lay e) `orElse` throwSTM NoLayoutError
   _ <- readTMVar (ren e) `orElse` throwSTM NoRenderError
-  writeTMVar (str e) $ l d
+  writeTMVar (str e) =<< l d
 
 -- | Setup the terminal buffering, echo, cursor.
 -- Then repeatedly read the doc stream, render text
@@ -58,9 +58,10 @@ runDisplay e = withoutEcho $ do
     forever $ join $ atomically $ do
       s <- takeTMVar $ str e
       r <- readTMVar $ ren e
+      t <- r s
       -- clear the screen, set cursor back to top left
       -- then output text
-      return $ TIO.putStrLn $ T.pack "\x1b[2J\x1b[H" <> r s
+      return $ TIO.putStrLn $ T.pack "\x1b[2J\x1b[H" <> t
 
 withoutCursor :: IO a -> IO a
 withoutCursor =

@@ -40,10 +40,10 @@ newFreestyleIO = atomically newFreestyle
 
 -- | User init configuration
 data FreestyleCfg s ann = FreestyleCfg
-  { readState :: STM s                          -- ^ read the current state
-  , drawState :: s -> STM (Doc ann)             -- ^ draw the current state
-  , layoutDoc :: Doc ann -> SimpleDocStream ann -- ^ layout the doc
-  , renderDoc :: SimpleDocStream ann -> Text    -- ^ render the doc
+  { readState :: STM s                                -- ^ read the current state
+  , drawState :: s -> STM (Doc ann)                   -- ^ draw the current state
+  , layoutDoc :: Doc ann -> STM (SimpleDocStream ann) -- ^ layout the doc
+  , renderDoc :: SimpleDocStream ann -> STM Text      -- ^ render the doc
   }
 
 -- | Run the TUI with the configuration
@@ -71,11 +71,11 @@ runState f = forever $ join $ atomically $ do
     check $ s /= s'
 
 -- | Change the layout algorithm
-setLayout :: Freestyle s ann -> (Doc ann -> SimpleDocStream ann) -> STM ()
+setLayout :: Freestyle s ann -> (Doc ann -> STM (SimpleDocStream ann)) -> STM ()
 setLayout f = D.setLayout $ display f
 
 -- | Change the rendering algorithm
-setRender :: Freestyle s ann -> (SimpleDocStream ann -> Text) -> STM ()
+setRender :: Freestyle s ann -> (SimpleDocStream ann -> STM Text) -> STM ()
 setRender f = D.setRender $ display f
 
 -- | Change the state accesor

@@ -52,7 +52,6 @@ displayDoc e d = do
 -- and output to terminal.
 runDisplay :: Display ann -> IO a
 runDisplay e = withoutEcho $ do
-  hSetBuffering stdin  NoBuffering
   hSetBuffering stdout LineBuffering
   withoutCursor $
     forever $ join $ atomically $ do

@@ -3,8 +3,8 @@ module Freestyle.Display
   ( Display
   , newDisplay
   , runDisplay
-  , setLayout
-  , setRender
+  , setDisplayLayout
+  , setDisplayRender
   , displayDoc
   , DisplayException(..)
   ) where
@@ -31,12 +31,12 @@ newDisplay =
   Display <$> newEmptyTMVar <*> newEmptyTMVar <*> newEmptyTMVar
 
 -- | Set the layout algorithm
-setLayout :: Display ann -> (Doc ann -> STM (SimpleDocStream ann)) -> STM ()
-setLayout e = writeTMVar $ lay e
+setDisplayLayout :: Display ann -> (Doc ann -> STM (SimpleDocStream ann)) -> STM ()
+setDisplayLayout e = writeTMVar $ lay e
 
 -- | Set the rendering algorithm
-setRender :: Display ann -> (SimpleDocStream ann -> STM Text) -> STM ()
-setRender e = writeTMVar $ ren e
+setDisplayRender :: Display ann -> (SimpleDocStream ann -> STM Text) -> STM ()
+setDisplayRender e = writeTMVar $ ren e
 
 -- | Layout, render, then send to the display daemon.
 -- If a layout or rendering algorithm is not present

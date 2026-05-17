@@ -14,39 +14,37 @@ extra-doc-files:    CHANGELOG.md
                     README.md
 
 library
-    ghc-options:      -Wall -Wunused-packages -O2
-    hs-source-dirs:   lib
-    default-language: Haskell2010
-    exposed-modules:  Freestyle,
-                      Freestyle.Display,
-                      Freestyle.Freestyle,
-                      Freestyle.Main
-    build-depends:    async
-                    , base < 5.0
-                    , prettyprinter
-                    , prettyprinter-ansi-terminal
-                    , stm
-                    , text
+  ghc-options:      -Wall -Wunused-packages -O2
+  hs-source-dirs:   lib
+  default-language: Haskell2010
+  exposed-modules:  Freestyle,
+                    Freestyle.Display,
+                    Freestyle.Freestyle,
+                    Freestyle.Main
+  build-depends:    async,
+                    base < 5.0,
+                    prettyprinter,
+                    prettyprinter-ansi-terminal,
+                    stm,
+                    text,
 
 executable fs
-    ghc-options:      -Wall -O2 -threaded
-    hs-source-dirs:   exe
-    default-language: Haskell2010
-    main-is:          Main.hs
-    build-depends:
-        base,
-        freestyle
+  ghc-options:      -Wall -O2 -threaded
+  hs-source-dirs:   exe
+  default-language: Haskell2010
+  main-is:          Main.hs
+  build-depends:    base,
+                    freestyle
 
 test-suite test
-    ghc-options:      -Wall -O2 -threaded
-    hs-source-dirs:   test
-    default-language: Haskell2010
-    type:             exitcode-stdio-1.0
-    main-is:          Main.hs
-    build-depends:
-        async,
-        base,
-        freestyle,
-        prettyprinter,
-        prettyprinter-ansi-terminal,
-        stm
+  ghc-options:      -Wall -Wunused-packages -O2 -threaded
+  hs-source-dirs:   test
+  default-language: Haskell2010
+  type:             exitcode-stdio-1.0
+  main-is:          Main.hs
+  build-depends:    async,
+                    base,
+                    freestyle,
+                    prettyprinter,
+                    prettyprinter-ansi-terminal,
+                    stm

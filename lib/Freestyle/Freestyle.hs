@@ -15,8 +15,7 @@ import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Monad
 import Data.Text.Lazy (Text)
-import Freestyle.Display hiding (setLayout, setRender)
-import qualified Freestyle.Display as D (setLayout, setRender)
+import Freestyle.Display
 import Prettyprinter
 
 -- | TUI handle
@@ -73,11 +72,11 @@ runState f = forever $ join $ atomically $ do
 
 -- | Change the layout algorithm
 setLayout :: Freestyle s ann -> (Doc ann -> STM (SimpleDocStream ann)) -> STM ()
-setLayout f = D.setLayout $ display f
+setLayout f = setDisplayLayout $ display f
 
 -- | Change the rendering algorithm
 setRender :: Freestyle s ann -> (SimpleDocStream ann -> STM Text) -> STM ()
-setRender f = D.setRender $ display f
+setRender f = setDisplayRender $ display f
 
 -- | Change the state reader
 setState :: Freestyle s ann -> STM s -> STM ()

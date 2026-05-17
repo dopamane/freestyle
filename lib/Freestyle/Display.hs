@@ -77,12 +77,12 @@ withoutEcho =
 
 -- | Freestyle display exception
 data DisplayException
-  = NoLayoutError -- ^ no layout, use 'setLayout'
-  | NoRenderError -- ^ no render, use 'setRender'
+  = NoLayoutError -- ^ no layout, use 'setDisplayLayout'
+  | NoRenderError -- ^ no render, use 'setDisplayRender'
   deriving (Eq, Read)
 
 instance Show DisplayException where
-  show NoLayoutError = "no layout, use setLayout"
-  show NoRenderError = "no render, use setRender"
+  show NoLayoutError = "no layout, use setDisplayLayout"
+  show NoRenderError = "no render, use setDisplayRender"
 
 instance Exception DisplayException

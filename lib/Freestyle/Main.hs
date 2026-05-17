@@ -44,7 +44,7 @@ initMain = Main
 
 mainCfg :: TVar Main -> FreestyleCfg Main Style
 mainCfg s = FreestyleCfg
-  { initState = readTVar s
+  { readState = readTVar s
   , layoutDoc = layoutPretty defaultLayoutOptions
   , renderDoc = renderDisplay
   , drawState = mainDraw

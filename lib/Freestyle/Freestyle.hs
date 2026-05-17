@@ -32,7 +32,7 @@ newFreestyle =
 
 -- | User init configuration
 data FreestyleCfg s ann = FreestyleCfg
-  { initState :: STM s                          -- ^ read the current state
+  { readState :: STM s                          -- ^ read the current state
   , drawState :: s -> STM (Doc ann)             -- ^ draw the current state
   , layoutDoc :: Doc ann -> SimpleDocStream ann -- ^ layout the doc
   , renderDoc :: SimpleDocStream ann -> Text    -- ^ render the doc
@@ -50,7 +50,7 @@ initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> STM ()
 initFreestyle f cfg = do
   setLayout f $ layoutDoc cfg
   setRender f $ renderDoc cfg
-  setState  f $ initState cfg
+  setState  f $ readState cfg
   setDraw   f $ drawState cfg
 
 -- | Display the current state then wait a change to re-display

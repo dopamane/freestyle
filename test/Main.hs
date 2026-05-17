@@ -21,7 +21,7 @@ main = do
 
 cfg :: TVar String -> FreestyleCfg String AnsiStyle
 cfg s = FreestyleCfg
-  { initState = readTVar s
+  { readState = readTVar s
   , drawState = \s' -> return $
     applyWhen (take 1 s' == "E") (annotate $ color Blue) $ pretty s'
   , layoutDoc = layoutPretty defaultLayoutOptions

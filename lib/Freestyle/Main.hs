@@ -12,6 +12,17 @@ import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import Prettyprinter.Render.Terminal
 
+freestyleMain :: IO ()
+freestyleMain = join $ atomically $ do
+  s <- newTVar initMain
+  f <- newFreestyle
+  return $ mapConcurrently_ id
+    [ runFreestyle f $ mainCfg s
+    , runWheel s
+    , runKeyReader s
+    , runWaterfall s
+    ]
+
 data Main = Main
   { colorWheel :: [Color]
   , offset :: Double
@@ -32,9 +43,9 @@ initMain = Main
     ]
   }
 
-mainCfg :: STM Main -> FreestyleCfg Main Style
+mainCfg :: TVar Main -> FreestyleCfg Main Style
 mainCfg s = FreestyleCfg
-  { initState = s
+  { initState = readTVar s
   , layoutDoc = layoutPretty defaultLayoutOptions
   , renderDoc = renderDisplay
   , drawState = mainDraw
@@ -47,18 +58,6 @@ mainDraw (Main cs rads en wf) =
     , renderSin rads
     , pretty $ if en then "ON" else "OFF"
     , renderWaterfall wf
-    ]
-
-freestyleMain :: IO ()
-freestyleMain = join $ atomically $ do
-  s <- newTVar initMain
-  f <- newFreestyle
-  initFreestyle f $ mainCfg $ readTVar s
-  return $ mapConcurrently_ id
-    [ runFreestyle f
-    , runWheel s
-    , runKeyReader s
-    , runWaterfall s
     ]
 
 runWheel :: TVar Main -> IO a

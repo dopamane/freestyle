@@ -1,9 +1,8 @@
 module Freestyle.Freestyle
   ( Freestyle
   , newFreestyle
-  , runFreestyle
-  , initFreestyle
   , FreestyleCfg(..)
+  , runFreestyle
   ) where
 
 import Control.Concurrent.Async
@@ -26,9 +25,25 @@ newFreestyle =
     <*> newEmptyTMVar
     <*> newEmptyTMVar
 
-runFreestyle :: Eq s => Freestyle s ann -> IO a
-runFreestyle f =
+data FreestyleCfg s ann = FreestyleCfg
+  { initState :: STM s
+  , drawState :: s -> STM (Doc ann)
+  , layoutDoc :: Doc ann -> SimpleDocStream ann
+  , renderDoc :: SimpleDocStream ann -> Text
+  }
+
+runFreestyle :: Eq s => Freestyle s ann -> FreestyleCfg s ann -> IO a
+runFreestyle f cfg = do
+  initFreestyle f cfg
   either id id <$> race (runDisplay $ display f) (runState f)
+
+-- | Initialize required configurations
+initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> IO ()
+initFreestyle f cfg = atomically $ do
+  setLayout (display f) $ layoutDoc cfg
+  setRender (display f) $ renderDoc cfg
+  writeTMVar (stateVar f) $ initState cfg
+  writeTMVar (drawVar  f) $ drawState cfg
 
 runState :: Eq s => Freestyle s ann -> IO a
 runState f = forever $ join $ atomically $ do
@@ -38,18 +53,3 @@ runState f = forever $ join $ atomically $ do
   return $ atomically $ do
     s' <- join $ readTMVar (stateVar f)
     check $ s /= s'
-
-data FreestyleCfg s ann = FreestyleCfg
-  { initState :: STM s
-  , drawState :: s -> STM (Doc ann)
-  , layoutDoc :: Doc ann -> SimpleDocStream ann
-  , renderDoc :: SimpleDocStream ann -> Text
-  }
-
--- | Initialize required configurations
-initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> STM ()
-initFreestyle f cfg = do
-  setLayout (display f) $ layoutDoc cfg
-  setRender (display f) $ renderDoc cfg
-  writeTMVar (stateVar f) $ initState cfg
-  writeTMVar (drawVar  f) $ drawState cfg

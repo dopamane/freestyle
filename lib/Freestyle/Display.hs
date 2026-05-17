@@ -51,9 +51,8 @@ displayDoc e d = do
 -- Then repeatedly read the doc stream, render text
 -- and output to terminal.
 runDisplay :: Display ann -> IO a
-runDisplay e = withoutEcho $ do
-  hSetBuffering stdout LineBuffering
-  withoutCursor $
+runDisplay e =
+  withTerm $
     forever $ join $ atomically $ do
       s <- takeTMVar $ str e
       r <- readTMVar $ ren e
@@ -61,6 +60,11 @@ runDisplay e = withoutEcho $ do
       -- clear the screen, set cursor back to top left
       -- then output text
       return $ TIO.putStrLn $ T.pack "\x1b[2J\x1b[H" <> t
+
+withTerm :: IO a -> IO a
+withTerm k = withoutEcho $ do
+  hSetBuffering stdout LineBuffering
+  withoutCursor k
 
 withoutCursor :: IO a -> IO a
 withoutCursor =

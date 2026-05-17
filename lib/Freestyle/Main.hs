@@ -15,9 +15,8 @@ import Prettyprinter.Render.Terminal
 freestyleMain :: IO ()
 freestyleMain = join $ atomically $ do
   s <- newTVar initMain
-  f <- newFreestyle
   return $ mapConcurrently_ id
-    [ runFreestyle f $ mainCfg s
+    [ runFreestyle $ mainCfg s
     , runWheel s
     , runKeyReader s
     , runWaterfall s

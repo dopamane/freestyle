@@ -1,8 +1,5 @@
 module Freestyle.Freestyle
-  ( Freestyle
-  , newFreestyle
-  , newFreestyleIO
-  , FreestyleCfg(..)
+  ( FreestyleCfg(..)
   , runFreestyle
   , setLayout
   , setRender
@@ -33,10 +30,7 @@ newFreestyle =
     <*> newEmptyTMVar
     <*> newEmptyTMVar
 
--- | Construct a new IO TUI
-newFreestyleIO :: IO (Freestyle s ann)
-newFreestyleIO = atomically newFreestyle
-
+-- | User init configuration
 data FreestyleCfg s ann = FreestyleCfg
   { initState :: STM s
   , drawState :: s -> STM (Doc ann)
@@ -44,14 +38,15 @@ data FreestyleCfg s ann = FreestyleCfg
   , renderDoc :: SimpleDocStream ann -> Text
   }
 
-runFreestyle :: Eq s => Freestyle s ann -> FreestyleCfg s ann -> IO a
-runFreestyle f cfg = do
+runFreestyle :: Eq s => FreestyleCfg s ann -> IO a
+runFreestyle cfg = join $ atomically $ do
+  f <- newFreestyle
   initFreestyle f cfg
-  either id id <$> race (runDisplay $ display f) (runState f)
+  return $ either id id <$> race (runDisplay $ display f) (runState f)
 
 -- | Initialize required configurations
-initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> IO ()
-initFreestyle f cfg = atomically $ do
+initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> STM ()
+initFreestyle f cfg = do
   setLayout f $ layoutDoc cfg
   setRender f $ renderDoc cfg
   setState  f $ initState cfg

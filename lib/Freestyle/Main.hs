@@ -12,6 +12,7 @@ import Freestyle.Freestyle
 import Prettyprinter
 import Prettyprinter.Render.Util.SimpleDocTree
 import Prettyprinter.Render.Terminal
+import System.IO
 
 -- | Main executable @fs@
 freestyleMain :: IO ()
@@ -40,8 +41,8 @@ initMain = Main
   , switch = False
   , waterfall =
     [ rotate i r
-    | (i, r) <- zip [1..] $ replicate 8 $ stimes (4 :: Int)
-      [Blue, Green, Blue, Blue, Yellow, Red, Green, Blue]
+    | (i, r) <- zip [1..] $ replicate 8 $ stimes (5 :: Int)
+      [Blue, Green, Blue, Blue, Yellow, Red, Cyan, Green, Blue]
     ]
   }
 
@@ -59,7 +60,7 @@ mainDraw (Main cs rads en wf) =
     [ hcat $ zipWith renderColorChar (cycle cs) "~~~~~~~~~~ Freestyle!"
     , renderSin rads
     , pretty $ if en then "ON" else "OFF"
-    , renderWaterfall wf
+    , drawWaterfall wf
     ]
 
 runWheel :: TVar Main -> IO a
@@ -73,23 +74,25 @@ runWheel s = forever $ do
         o'  = o + 0.1
 
 runKeyReader :: TVar Main -> IO a
-runKeyReader s = forever $ do
-  ch <- getChar
-  when (ch == 'a') $
-    atomically $ modifyTVar' s $ \m -> m{switch=not $ switch m}
+runKeyReader s = do
+  hSetBuffering stdin NoBuffering
+  forever $ do
+    ch <- getChar
+    when (ch == 'a') $
+      atomically $ modifyTVar' s $ \m -> m{switch=not $ switch m}
 
 runWaterfall :: TVar Main -> IO a
 runWaterfall s = forever $ do
   atomically $ modifyTVar' s $ \m ->
     m{waterfall=cycleWaterfall $ waterfall m}
-  threadDelay 100000
+  threadDelay 50000
 
 rotate :: Int -> [a] -> [a]
 rotate _ [] = []
 rotate n xs = zipWith const (drop n (cycle xs)) xs
 
-renderWaterfall :: [[Color]] -> Doc Style
-renderWaterfall rs = vsep [renderRow r | r <- rs]
+drawWaterfall :: [[Color]] -> Doc Style
+drawWaterfall rs = vsep [renderRow r | r <- rs]
   where
     renderRow r = hcat [renderCell c | c <- r]
       where

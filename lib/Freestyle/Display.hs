@@ -12,6 +12,7 @@ module Freestyle.Display
 import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad
+import Data.Function
 import Data.Text.Lazy (Text)
 import qualified Data.Text.Lazy as T
 import qualified Data.Text.Lazy.IO as TIO
@@ -52,14 +53,54 @@ displayDoc e d = do
 -- and output to terminal.
 runDisplay :: Display ann -> IO a
 runDisplay e =
-  withTerm $
-    forever $ join $ atomically $ do
+  withTerm $ loop Nothing `finally` TIO.putStrLn (eraseScreen <> home)
+  where
+    loop prevM = join $ atomically $ do
       s <- takeTMVar $ str e
       r <- readTMVar $ ren e
       t <- r s
-      -- clear the screen, set cursor back to top left
-      -- then output text
-      return $ TIO.putStrLn $ T.pack "\x1b[2J\x1b[H" <> t
+      return $ case prevM of
+        Nothing -> do
+          TIO.putStrLn $ eraseScreen <> home <> t <> home
+          loop $ Just t
+        Just p -> do
+          let t' = composite t p
+          TIO.putStrLn $ t' <> home
+          loop $ Just t
+
+home :: Text
+home = movRow 0
+
+eraseLine :: Text
+eraseLine = T.pack "\x1b[0K"
+
+eraseScreen :: Text
+eraseScreen = T.pack "\x1b[2J"
+
+movRow :: Int -> Text
+movRow r = T.pack $ "\x1b[" <> show (r + 1) <> "H"
+
+composite :: Text -> Text -> Text
+composite t = foldDiffs . map diffLines . zipLines t
+
+-- | zip lines, pad previous
+zipLines :: Text -> Text -> [(Text, Text)]
+zipLines t p =
+  zip ts $ applyWhen (length ps < length ts) (<> repeat mempty) ps
+  where
+    ts = T.lines t
+    ps = T.lines p
+
+diffLines :: (Text, Text) -> Maybe Text
+diffLines (t, p)
+  | t /= p    = Just t
+  | otherwise = Nothing
+
+foldDiffs :: [Maybe Text] -> Text
+foldDiffs = foldMap go . zip [0..]
+  where
+    go (_  , Nothing) = mempty
+    go (idx, Just  t) = movRow idx <> eraseLine <> t
 
 withTerm :: IO a -> IO a
 withTerm k = withoutEcho $ do

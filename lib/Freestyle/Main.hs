@@ -61,6 +61,10 @@ mainDraw (Main cs rads en wf) =
     , renderSin rads
     , pretty $ if en then "ON" else "OFF"
     , drawWaterfall wf
+    , indent 2 $ vsep -- annotate Border $ vsep
+      [ pretty "BORDER"
+      , pretty "BOXED"
+      ]
     ]
 
 runWheel :: TVar Main -> IO a
@@ -116,16 +120,37 @@ renderColorChar :: Color -> Char -> Doc Style
 renderColorChar clr ch = annotate (Ansi $ color clr) $ pretty ch
 
 renderDisplay :: SimpleDocStream Style -> Text
-renderDisplay = renderSimplyDecorated T.fromStrict render . treeForm
+renderDisplay = renderSdt . treeForm
 
-render :: Style -> Text -> Text
-render d s = case d of
+renderSdt :: SimpleDocTree Style -> Text
+renderSdt sdt = case sdt of
+  STEmpty -> mempty
+  STChar c -> T.singleton c
+  STText _ t -> T.fromStrict t
+  STLine i -> T.singleton '\n' <> T.replicate (fromIntegral i) (T.singleton ' ')
+  STAnn ann rest -> renderStyle ann rest $ renderSdt rest
+  STConcat xs -> foldMap renderSdt xs
+
+renderStyle :: Style -> SimpleDocTree Style -> Text -> Text
+renderStyle d r s = case d of
   Ansi a -> go $ annotate a $ pretty s
   Title  -> go $ annotate (bold <> underlined <> color Blue) $ pretty s
+  Border -> renderBorder s
   where
     go = renderLazy . layoutPretty defaultLayoutOptions
+
+renderBorder :: Text -> Text
+renderBorder inner =
+    let ls = T.lines inner
+        w  = maximum (map T.length ls)
+        pad t = t <> T.replicate (w - T.length t) (T.pack " ")
+        top    = T.pack "┌" <> T.replicate w (T.pack "─") <> T.pack "┐"
+        bottom = T.pack "└" <> T.replicate w (T.pack "─") <> T.pack "┘"
+        middle = [ T.pack "│" <> pad l <> T.pack "│" | l <- ls ]
+    in T.unlines (top : middle ++ [bottom])
 
 data Style
   = Ansi AnsiStyle
   | Title
+  | Border
   deriving (Eq, Show)

@@ -89,9 +89,11 @@ composite new old = go 0 (T.lines new) (T.lines old)
     go _ [] [] = mempty
     go _ ns [] = fromLazyText $ T.unlines ns
     go _ [] (_:_) = "\x1b[J"
-    go r (n:ns) (o:os)
-      | n /= o = movRow r <> fromLazyText n <> eraseLine <> go (r + 1) ns os
-      | otherwise = go (r + 1) ns os
+    go r (n:ns) (o:os) = mconcat
+      [ if n /= o then movRow r <> fromLazyText n else mempty
+      , if T.length o > T.length n then eraseLine else mempty
+      , go (r + 1) ns os
+      ]
 
 withTerm :: IO a -> IO a
 withTerm k = withoutEcho $ do

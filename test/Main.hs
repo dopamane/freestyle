@@ -59,10 +59,6 @@ mainDraw (Main cs rads en wf) =
     , renderSin rads
     , pretty $ if en then "ON" else "OFF"
     , drawWaterfall wf
-    , indent 2 $ vsep -- annotate Border $ vsep
-      [ pretty "BORDER"
-      , pretty "BOXED"
-      ]
     ]
 
 runWheel :: TVar Main -> IO a
@@ -133,22 +129,10 @@ renderStyle :: Style -> SimpleDocTree Style -> Text -> Text
 renderStyle d _ s = case d of
   Ansi a -> go $ annotate a $ pretty s
   Title  -> go $ annotate (bold <> underlined <> color Blue) $ pretty s
-  Border -> renderBorder s
   where
     go = renderLazy . layoutPretty defaultLayoutOptions
-
-renderBorder :: Text -> Text
-renderBorder inner =
-    let ls = T.lines inner
-        w  = maximum (map T.length ls)
-        pad t = t <> T.replicate (w - T.length t) (T.pack " ")
-        top    = T.pack "┌" <> T.replicate w (T.pack "─") <> T.pack "┐"
-        bottom = T.pack "└" <> T.replicate w (T.pack "─") <> T.pack "┘"
-        middle = [ T.pack "│" <> pad l <> T.pack "│" | l <- ls ]
-    in T.unlines (top : middle ++ [bottom])
 
 data Style
   = Ansi AnsiStyle
   | Title
-  | Border
   deriving (Eq, Show)

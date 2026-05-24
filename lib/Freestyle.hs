@@ -85,7 +85,13 @@ runFreestyle f cfg = do
 
 -- | Display the current state then wait a change to re-display
 runState :: Eq s => Freestyle s ann -> IO a
-runState f = withTerm $ loop Nothing `finally` output (eraseScreen <> home)
+runState f =
+  -- without echo
+  bracket_ (hSetEcho stdin False) (hSetEcho stdin True) $ do
+    hSetBuffering stdout $ BlockBuffering Nothing
+    -- without cursor
+    bracket_ (output "\x1b[?25l") (output "\x1b[?25h") $
+      loop Nothing `finally` output (eraseScreen <> home)
   where
     loop Nothing = join $ atomically $ do
       s <- join $ readTMVar (stateVar f)
@@ -150,11 +156,3 @@ composite new old = go 0 (T.lines new) (T.lines old)
       , if T.length o > T.length n then eraseLine else mempty
       , go (r + 1) ns os
       ]
-
-withTerm :: IO a -> IO a
-withTerm k =
-  -- without echo
-  bracket_ (hSetEcho stdin False) (hSetEcho stdin True) $ do
-    hSetBuffering stdout $ BlockBuffering Nothing
-    -- without cursor
-    bracket_ (output "\x1b[?25l") (output "\x1b[?25h") k

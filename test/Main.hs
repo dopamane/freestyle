@@ -39,7 +39,7 @@ initMain = Main
   , switch = False
   , waterfall =
     [ rotate i r
-    | (i, r) <- zip [1..] $ replicate 8 $ stimes (5 :: Int)
+    | (i, r) <- zip [1..] $ replicate 25 $ stimes (5 :: Int)
       [Blue, Green, Blue, Blue, Yellow, Red, Cyan, Green, Blue]
     ]
   }

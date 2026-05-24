@@ -74,18 +74,13 @@ data FreestyleCfg s ann = FreestyleCfg
   }
 
 -- | Run the TUI with the configuration
-runFreestyle :: Eq s => Freestyle s ann -> FreestyleCfg s ann -> IO a
+runFreestyle :: Eq ann => Freestyle s ann -> FreestyleCfg s ann -> IO a
 runFreestyle f cfg = do
   atomically $ do
     setLayout f $ layoutDoc cfg
     setRender f $ renderDoc cfg
     setState  f $ readState cfg
     setDraw   f $ drawState cfg
-  runState f
-
--- | Display the current state then wait a change to re-display
-runState :: Eq s => Freestyle s ann -> IO a
-runState f =
   -- without echo
   bracket_ (hSetEcho stdin False) (hSetEcho stdin True) $ do
     hSetBuffering stdout $ BlockBuffering Nothing
@@ -93,26 +88,25 @@ runState f =
     bracket_ (output "\x1b[?25l") (output "\x1b[?25h") $
       loop Nothing `finally` output (eraseScreen <> home)
   where
-    loop Nothing = join $ atomically $ do
-      s <- join $ readTMVar (stateVar f)
-      t <- renderText f s
-      return $ do
-        output $ eraseScreen <> home <> t
-        loop $ Just (s, t)
-    loop (Just (s, p)) = join $ atomically $ do
+    loop prevM = join $ atomically $ do
       s' <- join $ readTMVar (stateVar f)
-      check $ s' /= s
-      t <- renderText f s'
-      return $ do
-        output $ toLazyText $ composite t p
-        loop $ Just (s', t)
-
-renderText :: Freestyle s ann -> s -> STM Text
-renderText f s = do
-  draw <- readTMVar $ drawVar f
-  layo <- readTMVar $ lay f
-  rend <- readTMVar $ ren f
-  rend =<< layo =<< draw s
+      draw <- readTMVar $ drawVar f
+      layo <- readTMVar $ lay f
+      sds' <- layo =<< draw s'
+      case prevM of
+        Nothing -> do
+          rend <- readTMVar $ ren f
+          t <- rend sds'
+          return $ do
+            output $ eraseScreen <> home <> t
+            loop $ Just (sds', t)
+        Just (sds, p) -> do
+          check $ sds /= sds'
+          rend <- readTMVar $ ren f
+          t <- rend sds'
+          return $ do
+            output $ composite t p
+            loop $ Just (sds', t)
 
 -- | Change the layout algorithm
 setLayout :: Freestyle s ann -> (Doc ann -> STM (SimpleDocStream ann)) -> STM ()
@@ -146,8 +140,8 @@ eraseScreen = "\x1b[2J"
 movRow :: Int -> Builder
 movRow n = "\x1b[" <> fromString (show (n + 1)) <> "H"
 
-composite :: Text -> Text -> Builder
-composite new old = go 0 (T.lines new) (T.lines old)
+composite :: Text -> Text -> Text
+composite new old = toLazyText $ go 0 (T.lines new) (T.lines old)
   where
     go _ ns [] = fromLazyText $ T.unlines ns
     go _ [] (_:_) = "\x1b[J"

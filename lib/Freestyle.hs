@@ -132,16 +132,15 @@ output t = TIO.putStr t >> hFlush stdout
 clearScreen :: Text
 clearScreen = "\x1b[2J\x1b[H"
 
-movRow :: Int -> Builder
-movRow n = "\x1b[" <> fromString (show (n + 1)) <> "H"
-
 composite :: Text -> Text -> Text
 composite new old = toLazyText $ go 0 (T.lines new) (T.lines old)
   where
     go _ ns [] = fromLazyText $ T.unlines ns
     go _ [] (_:_) = "\x1b[J"
     go r (n:ns) (o:os) = mconcat
-      [ if n /= o then movRow r <> fromLazyText n else mempty
+      [ if n /= o then movRow <> fromLazyText n else mempty
       , if T.length o > T.length n then "\x1b[0K" else mempty -- erase line
       , go (r + 1) ns os
       ]
+      where
+        movRow = "\x1b[" <> fromString (show (r + 1 :: Int)) <> "H"

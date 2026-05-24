@@ -58,11 +58,7 @@ data Freestyle s ann = Freestyle
 -- | Construct a new STM TUI
 newFreestyle :: STM (Freestyle s ann)
 newFreestyle =
-  Freestyle
-    <$> newEmptyTMVar
-    <*> newEmptyTMVar
-    <*> newEmptyTMVar
-    <*> newEmptyTMVar
+  Freestyle <$> newEmptyTMVar <*> newEmptyTMVar <*> newEmptyTMVar <*> newEmptyTMVar
 
 -- | Construct a new IO TUI
 newFreestyleIO :: IO (Freestyle s ann)
@@ -80,16 +76,12 @@ data FreestyleCfg s ann = FreestyleCfg
 -- | Run the TUI with the configuration
 runFreestyle :: Eq s => Freestyle s ann -> FreestyleCfg s ann -> IO a
 runFreestyle f cfg = do
-  atomically $ initFreestyle f cfg
+  atomically $ do
+    setLayout f $ layoutDoc cfg
+    setRender f $ renderDoc cfg
+    setState  f $ readState cfg
+    setDraw   f $ drawState cfg
   runState f
-
--- | Initialize required configurations
-initFreestyle :: Freestyle s ann -> FreestyleCfg s ann -> STM ()
-initFreestyle f cfg = do
-  setLayout f $ layoutDoc cfg
-  setRender f $ renderDoc cfg
-  setState  f $ readState cfg
-  setDraw   f $ drawState cfg
 
 -- | Display the current state then wait a change to re-display
 runState :: Eq s => Freestyle s ann -> IO a
@@ -151,7 +143,6 @@ movRow n = "\x1b[" <> fromString (show (n + 1)) <> "H"
 composite :: Text -> Text -> Builder
 composite new old = go 0 (T.lines new) (T.lines old)
   where
-    go _ [] [] = mempty
     go _ ns [] = fromLazyText $ T.unlines ns
     go _ [] (_:_) = "\x1b[J"
     go r (n:ns) (o:os) = mconcat
@@ -161,18 +152,9 @@ composite new old = go 0 (T.lines new) (T.lines old)
       ]
 
 withTerm :: IO a -> IO a
-withTerm k = withoutEcho $ do
-  hSetBuffering stdout $ BlockBuffering Nothing
-  withoutCursor k
-
-withoutCursor :: IO a -> IO a
-withoutCursor =
-  bracket_
-    (output "\x1b[?25l") -- hide cursor
-    (output "\x1b[?25h") -- show cursor
-
-withoutEcho :: IO a -> IO a
-withoutEcho =
-  bracket_
-    (hSetEcho stdin False)
-    (hSetEcho stdin True)
+withTerm k =
+  -- without echo
+  bracket_ (hSetEcho stdin False) (hSetEcho stdin True) $ do
+    hSetBuffering stdout $ BlockBuffering Nothing
+    -- without cursor
+    bracket_ (output "\x1b[?25l") (output "\x1b[?25h") k

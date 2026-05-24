@@ -86,7 +86,7 @@ runFreestyle f cfg = do
     hSetBuffering stdout $ BlockBuffering Nothing
     -- without cursor
     bracket_ (output "\x1b[?25l") (output "\x1b[?25h") $
-      loop Nothing `finally` output (eraseScreen <> home)
+      loop Nothing `finally` output clearScreen
   where
     loop prevM = join $ atomically $ do
       s' <- join $ readTMVar (stateVar f)
@@ -98,7 +98,7 @@ runFreestyle f cfg = do
           rend <- readTMVar $ ren f
           t <- rend sds'
           return $ do
-            output $ eraseScreen <> home <> t
+            output $ clearScreen <> t
             loop $ Just (sds', t)
         Just (sds, p) -> do
           check $ sds /= sds'
@@ -128,14 +128,9 @@ setDraw f = writeTMVar $ drawVar f
 output :: Text -> IO ()
 output t = TIO.putStr t >> hFlush stdout
 
-home :: Text
-home = "\x1b[H"
-
-eraseLine :: Builder
-eraseLine = "\x1b[0K"
-
-eraseScreen :: Text
-eraseScreen = "\x1b[2J"
+-- | erase screen and goto home
+clearScreen :: Text
+clearScreen = "\x1b[2J\x1b[H"
 
 movRow :: Int -> Builder
 movRow n = "\x1b[" <> fromString (show (n + 1)) <> "H"
@@ -147,6 +142,6 @@ composite new old = toLazyText $ go 0 (T.lines new) (T.lines old)
     go _ [] (_:_) = "\x1b[J"
     go r (n:ns) (o:os) = mconcat
       [ if n /= o then movRow r <> fromLazyText n else mempty
-      , if T.length o > T.length n then eraseLine else mempty
+      , if T.length o > T.length n then "\x1b[0K" else mempty -- erase line
       , go (r + 1) ns os
       ]

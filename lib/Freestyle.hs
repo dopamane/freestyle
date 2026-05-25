@@ -1,6 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Concurrent, pretty TUI
+-- | Create and display pretty terminal graphics
+--
+-- Construct a new handle and configuration:
+--
+--   * a way to read state
+--   * a function to draw the current state
+--   * a function to layout the current doc
+--   * a function to render the 'SimpleDocStream' to 'Text'
+--
+-- Run the handle and configuration using 'runFreestyle'.
+-- Note, it has an 'Eq' constraint. Freestyle re-renders
+-- the terminal if the 'SimpleDocStream' changes.
+-- This way, apps may make state changes without causing
+-- terminal re-rendering.
+--
+-- The t'Freestyle' handle supports on-the-fly
+-- state, draw, layout, and rendering changes. Use dynamic
+-- layout algorithms based on window size or environment.
 --
 -- @
 -- import Freestyle

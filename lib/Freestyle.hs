@@ -82,7 +82,7 @@ newFreestyleIO :: IO (Freestyle s ann)
 newFreestyleIO = atomically newFreestyle
 
 -- | User init configuration.
--- The TUI updates when current state changes.
+-- The TUI updates when 'SimpleDocStream' changes.
 data FreestyleCfg s ann = FreestyleCfg
   { readState :: STM s                                -- ^ read the current state
   , drawState :: s -> STM (Doc ann)                   -- ^ draw the current state
@@ -109,17 +109,16 @@ runFreestyle f cfg = do
       s' <- join $ readTMVar (stateVar f)
       draw <- readTMVar $ drawVar f
       layo <- readTMVar $ lay f
+      rend <- readTMVar $ ren f
       sds' <- layo =<< draw s'
       case prevM of
         Nothing -> do
-          rend <- readTMVar $ ren f
           t <- rend sds'
           return $ do
             output $ clearScreen <> t
             loop $ Just (sds', t)
         Just (sds, p) -> do
           check $ sds /= sds'
-          rend <- readTMVar $ ren f
           t <- rend sds'
           return $ do
             output $ composite t p
@@ -149,6 +148,7 @@ output t = TIO.putStr t >> hFlush stdout
 clearScreen :: Text
 clearScreen = "\x1b[2J\x1b[H"
 
+-- | construct line diff rewrites
 composite :: Text -> Text -> Text
 composite new old = toLazyText $ go 0 (T.lines new) (T.lines old)
   where

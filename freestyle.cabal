@@ -25,7 +25,7 @@ library
   build-depends:    base < 5.0,
                     prettyprinter,
                     stm,
-                    text,
+                    text
 
 test-suite test
   ghc-options:      -Wall -Wunused-packages -O2 -threaded

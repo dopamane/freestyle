@@ -9,7 +9,7 @@
 --   * a function to layout the current doc
 --   * a function to render the 'SimpleDocStream' to 'Text'
 --
--- Run the handle and configuration using 'runFreestyle'.
+-- Run the configuration using 'runFreestyle'.
 -- Note, it has an 'Eq' constraint. Freestyle re-renders
 -- the terminal if the 'SimpleDocStream' changes.
 -- This way, apps may make state changes without causing
@@ -17,7 +17,8 @@
 --
 -- The t'Freestyle' handle supports on-the-fly
 -- state, draw, layout, and rendering changes. Use dynamic
--- layout algorithms based on window size or environment.
+-- layout, rendering algorithms based on environment
+-- such as window size.
 --
 -- @
 -- import Freestyle
@@ -106,11 +107,11 @@ runFreestyle f cfg = do
       loop Nothing `finally` output clearScreen
   where
     loop prevM = join $ atomically $ do
-      s' <- join $ readTMVar (stateVar f)
+      s <- join $ readTMVar $ stateVar f
       draw <- readTMVar $ drawVar f
       layo <- readTMVar $ lay f
       rend <- readTMVar $ ren f
-      sds' <- layo =<< draw s'
+      sds' <- layo =<< draw s
       case prevM of
         Nothing -> do
           t <- rend sds'
